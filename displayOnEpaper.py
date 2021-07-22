@@ -9,10 +9,10 @@ if os.path.exists(libdir):
 
 import logging
 import epd2in13bc
-import time
 from PIL import Image
-import numpy as np
-import traceback
+from io import BytesIO
+from picamera import PiCamera
+from time import gmtime, strftime, sleep
 
 
 logging.basicConfig(level=logging.INFO)
@@ -20,14 +20,28 @@ logging.basicConfig(level=logging.INFO)
 try:
 	logging.info("DiplayDemo Demo")
 
+	imageName = strftime("%Y-%m-%d-%H-%M-%S", gmtime()) + ".jpg"
+	
+	stream = BytesIO()
+	camera = PiCamera(resolution=(212, 104), framerate=30)
+	camera.iso = 1000
+	camera.start_preview()
+	sleep(2)
+	camera.capture(stream, format='jpeg')
+	camera.capture(imageName)
+	camera.stop_preview()
+	stream.seek(0)
+
 	epd = epd2in13bc.EPD()
 	logging.info("init and Clear")
 	epd.init()
 	epd.Clear()
 
 	HBlackimage = Image.new('1', (epd.height, epd.width), 255)
+	
+	img = Image.open(stream)
 
-	img = Image.open('out.jpg').resize((212, 104))
+	# img = Image.open('out.jpg').resize((212, 104))
 	
 	epd.display(epd.getbuffer(img))
 
